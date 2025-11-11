@@ -157,11 +157,17 @@ class EmailFilter_Plugin implements Typecho_Plugin_Interface
 spam@example.org');
         $form->addInput($filterEmails);
         
-        // 错误提示信息设置项
-        $errorMessage = new Typecho_Widget_Helper_Form_Element_Text('errorMessage', NULL, '该邮箱未在信任范围内，请更换其他邮箱', 
-            _t('错误提示信息'), _t('当用户使用被过滤的邮箱时显示的提示信息'));
-        $errorMessage->setAttribute('style', 'width: 100%; max-width: 500px;');
-        $form->addInput($errorMessage);
+        // 通用域名过滤提示信息设置项
+        $domainErrorMessage = new Typecho_Widget_Helper_Form_Element_Text('domainErrorMessage', NULL, '您所使用的邮箱域名未通过安全校验，请更换其他邮箱域名', 
+            _t('通用域名过滤提示'), _t('当用户使用被过滤的通用域名时显示的提示信息（如：*@test.com）'));
+        $domainErrorMessage->setAttribute('style', 'width: 100%; max-width: 500px;');
+        $form->addInput($domainErrorMessage);
+        
+        // 特定邮箱过滤提示信息设置项
+        $emailErrorMessage = new Typecho_Widget_Helper_Form_Element_Text('emailErrorMessage', NULL, '您所使用的邮箱已被禁止，请更换其他邮箱地址', 
+            _t('特定邮箱过滤提示'), _t('当用户使用被过滤的特定邮箱地址时显示的提示信息'));
+        $emailErrorMessage->setAttribute('style', 'width: 100%; max-width: 500px;');
+        $form->addInput($emailErrorMessage);
         
         // 添加保存按钮样式调整 - 安全检查，避免null对象错误
         $submitInput = $form->getInput('submit');
@@ -241,8 +247,19 @@ spam@example.org');
             
             // PHP 8.4 兼容性：安全地获取配置值
             $filterEmails = is_string($config->filterEmails) ? trim($config->filterEmails) : '';
-            $errorMessage = is_string($config->errorMessage) && !empty($config->errorMessage) 
-                ? $config->errorMessage 
+            
+            // 从配置中获取错误提示信息，提供默认值确保向后兼容性
+            $domainErrorMessage = is_string($config->domainErrorMessage) && !empty($config->domainErrorMessage)
+                ? $config->domainErrorMessage
+                : '您所使用的邮箱域名未通过安全校验，请更换其他邮箱域名';
+            
+            $emailErrorMessage = is_string($config->emailErrorMessage) && !empty($config->emailErrorMessage)
+                ? $config->emailErrorMessage
+                : '您所使用的邮箱已被禁止，请更换其他邮箱地址';
+            
+            // 保留旧配置的兼容性支持
+            $errorMessage = is_string($config->errorMessage) && !empty($config->errorMessage)
+                ? $config->errorMessage
                 : '该邮箱未在信任范围内，请更换其他邮箱';
             
             // 如果没有设置过滤规则，直接返回
@@ -257,8 +274,14 @@ spam@example.org');
             // 检查邮箱是否在过滤列表中
             foreach ($filterList as $filterPattern) {
                 if (is_string($filterPattern) && self::isEmailMatch($email, $filterPattern)) {
-                    // 邮箱匹配过滤规则，抛出异常
-                    throw new Typecho_Widget_Exception(_t($errorMessage));
+                    // 根据过滤规则类型提供不同的错误提示
+                    // 通用域名匹配（如 *@test.com）
+                    if (strpos($filterPattern, '*@') === 0) {
+                        throw new Typecho_Widget_Exception(_t($domainErrorMessage));
+                    } else {
+                        // 特定邮箱匹配（如 123@tesst.com）
+                        throw new Typecho_Widget_Exception(_t($emailErrorMessage));
+                    }
                 }
             }
             
