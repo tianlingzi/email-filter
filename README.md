@@ -15,7 +15,7 @@ EmailFilter 是一款专为 Typecho 1.2.1 设计的邮箱过滤插件，用于�
 ## 安装说明
 
 1. **下载插件**：将插件文件下载或克隆到本地
-2. **上传插件**：将 `EmailFilter` 文件夹上传到 Typecho 网站的 `usr/plugins/` 目录下
+2. **上传插件**：将 `Plugin.php` 文件上传到 Typecho 网站的 `usr/plugins/EmailFilter` 目录下
 3. **启用插件**：登录 Typecho 后台，进入「控制台」→「插件」，找到「EmailFilter」插件并点击「启用」
 4. **配置插件**：启用后点击「设置」按钮，配置需要过滤的邮箱地址
 
